@@ -1,0 +1,56 @@
+version: '3.6'
+services:
+  db:
+    image: postgres:14.5
+    container_name: schedule-docker-db
+    environment:
+      POSTGRES_USER: inna
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: schedule
+    volumes:
+        - postgres-data:/var/lib/postgresql/data
+    ports:
+      - target: 5432
+        published: 5433
+        protocol: tcp
+        mode: host
+    networks:
+      - backdb
+    expose:
+      - 5433
+
+  back:
+    build:
+      context: ./back
+      dockerfile: ../back/Dockerfile
+    image: inna/schedule-back
+    container_name: schedule-backend
+    ports:
+      - "9010:9010"
+    depends_on:
+      - db
+    networks:
+      - frontback
+      - backdb
+
+  front:
+    restart: always
+    build: ./front
+    image: inna/schedule-front
+    container_name: schedule-front
+    ports:
+      - "9011:9011"
+    depends_on:
+      - back
+    networks:
+      - frontback
+
+networks:
+  backdb:
+    driver: bridge
+  frontback:
+    driver: bridge
+
+
+volumes:
+  postgres-data:
